@@ -22,7 +22,7 @@ public class RestaurantTransformer {
     public static RestaurantResponse RestaurantToRestaurantResponse(Restaurant restaurant) {
         List<MenuResponse> menu = restaurant.getAvailableMenuItems()
                 .stream()
-                .map(FoodItemTransformer::FoodItemToFoodResponse)
+                .map(MenuItemTransformer::MenuItemToMenuResponse)
                 .toList();
 
         var response = new RestaurantResponse();

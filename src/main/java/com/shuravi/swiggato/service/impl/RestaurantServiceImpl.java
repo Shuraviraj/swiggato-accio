@@ -8,7 +8,7 @@ import com.shuravi.swiggato.model.MenuItem;
 import com.shuravi.swiggato.model.Restaurant;
 import com.shuravi.swiggato.repository.RestaurantRepository;
 import com.shuravi.swiggato.service.RestaurantService;
-import com.shuravi.swiggato.transformer.FoodItemTransformer;
+import com.shuravi.swiggato.transformer.MenuItemTransformer;
 import com.shuravi.swiggato.transformer.RestaurantTransformer;
 import com.shuravi.swiggato.utils.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +62,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 
         Restaurant restaurant = restaurantRepository.findById(menuRequest.getRestaurantId()).get();
         // make food entity
-        MenuItem menuItem = FoodItemTransformer.FoodRequestToFoodItem(menuRequest);
+        MenuItem menuItem = MenuItemTransformer.MenuRequestToMenuItem(menuRequest);
         menuItem.setRestaurant(restaurant);
 
         restaurant.getAvailableMenuItems().add(menuItem);

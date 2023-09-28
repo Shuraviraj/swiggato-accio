@@ -4,8 +4,8 @@ import com.shuravi.swiggato.dto.request.MenuRequest;
 import com.shuravi.swiggato.dto.response.MenuResponse;
 import com.shuravi.swiggato.model.MenuItem;
 
-public class FoodItemTransformer {
-    public static MenuItem FoodRequestToFoodItem(MenuRequest menuRequest) {
+public class MenuItemTransformer {
+    public static MenuItem MenuRequestToMenuItem(MenuRequest menuRequest) {
         return MenuItem.builder()
                 .dishName(menuRequest.getDishName())
                 .price(menuRequest.getPrice())
@@ -15,7 +15,7 @@ public class FoodItemTransformer {
                 .build();
     }
 
-    public static MenuResponse FoodItemToFoodResponse(MenuItem menuItem) {
+    public static MenuResponse MenuItemToMenuResponse(MenuItem menuItem) {
         return MenuResponse.builder()
                 .dishName(menuItem.getDishName())
                 .price(menuItem.getPrice())

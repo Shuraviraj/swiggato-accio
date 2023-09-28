@@ -13,6 +13,7 @@ import com.shuravi.swiggato.repository.CartRepository;
 import com.shuravi.swiggato.repository.CustomerRepository;
 import com.shuravi.swiggato.repository.FoodRepo;
 import com.shuravi.swiggato.repository.MenuRepository;
+import com.shuravi.swiggato.transformer.FoodTransformer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -49,24 +50,59 @@ public class CartService {
             throw new MenuItemNotFoundException("Given dish is out of stock for now!!!");
         }
 
-        // ready to add item to cart
-        FoodItem foodItem = FoodItem.builder()
-                .menuItem(menuItem)
-                .requiredQuantity(foodRequest.getRequiredQuantity())
-                .totalCost((double) foodRequest.getRequiredQuantity() * menuItem.getPrice())
-                .build();
-
         Cart cart = customer.getCart();
-        FoodItem savedFoodItem = foodRepo.save(foodItem);
+
+        //having item for same restaurant
+        if (!cart.getFoodItems().isEmpty()) {
+            var currRestaurant = cart.getFoodItems().get(0).getMenuItem().getRestaurant();
+            var newRestaurant = menuItem.getRestaurant();
+
+            if (!currRestaurant.equals(newRestaurant)) {
+                List<FoodItem> foodItems = cart.getFoodItems();
+                for (var foodItem : foodItems) {
+                    foodItem.setCart(null);
+                    foodItem.setOrder(null);
+                    foodItem.setMenuItem(null);
+                }
+                cart.setCartTotal(0);
+                cart.getFoodItems().clear();
+                foodRepo.deleteAll(foodItems);
+            }
+        }
+
+
+        boolean alreadyExist = false;
+        FoodItem savedFoodItem = new FoodItem();
+
+        if (!cart.getFoodItems().isEmpty()) {
+            for (FoodItem foodItem : cart.getFoodItems()) {
+                if (foodItem.getMenuItem().getId() == menuItem.getId()) {
+                    savedFoodItem = foodItem;
+                    int curr = foodItem.getRequiredQuantity();
+                    foodItem.setRequiredQuantity(curr + foodRequest.getRequiredQuantity());
+                    alreadyExist = true;
+                    break;
+                }
+            }
+        }
+        if (!alreadyExist) {
+            FoodItem foodItem = FoodItem.builder()
+                    .menuItem(menuItem)
+                    .requiredQuantity(foodRequest.getRequiredQuantity())
+                    .totalCost((double) foodRequest.getRequiredQuantity() * menuItem.getPrice())
+                    .build();
+
+            savedFoodItem = foodRepo.save(foodItem);
+            cart.getFoodItems().add(savedFoodItem);
+            menuItem.getFoodItems().add(savedFoodItem);
+            savedFoodItem.setCart(cart);
+        }
 
         double cartTotal = 0;
-        cart.getFoodItems().add(savedFoodItem);
         for (FoodItem food : cart.getFoodItems()) {
             cartTotal += food.getRequiredQuantity() * food.getMenuItem().getPrice();
         }
-        savedFoodItem.setCart(cart);
         cart.setCartTotal(cartTotal);
-        menuItem.getFoodItems().add(savedFoodItem);
 
         // save
         Cart savedCart = cartRepository.save(cart);
@@ -74,15 +110,7 @@ public class CartService {
 
         List<FoodResponse> foodResponseList = new ArrayList<>();
         for (FoodItem food : cart.getFoodItems()) {
-            FoodResponse foodResponse = FoodResponse.builder()
-                    .dishName(food.getMenuItem().getDishName())
-                    .price(food.getMenuItem().getPrice())
-                    .category(food.getMenuItem().getCategory())
-                    .veg(food.getMenuItem().isVeg())
-                    .quantityAdded(food.getRequiredQuantity())
-                    .build();
-
-            foodResponseList.add(foodResponse);
+            foodResponseList.add(FoodTransformer.FoodToFoodResponse(food));
         }
 
         return CartStatusResponse.builder()
